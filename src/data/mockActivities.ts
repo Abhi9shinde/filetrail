@@ -4,7 +4,7 @@ export const mockActivities: Activity[] = [
   {
     id: "1",
     fileId: "file-resume",
-    time: "10:32",
+    timestamp: "2025-02-14T10:32:00-05:00",
     type: "download",
     file: "resume.pdf",
     description: "Downloaded from LinkedIn",
@@ -12,15 +12,15 @@ export const mockActivities: Activity[] = [
   {
     id: "2",
     fileId: "file-resume",
-    time: "10:47",
+    timestamp: "2025-02-14T10:47:00-05:00",
     type: "modify",
     file: "resume.pdf",
-    description: "Edited · 37 changes",
+    description: "Edited",
   },
   {
     id: "3",
     fileId: "file-resume",
-    time: "11:05",
+    timestamp: "2025-02-14T11:05:00-05:00",
     type: "rename",
     file: "resume_final.pdf",
     description: "Renamed from resume.pdf",
@@ -28,7 +28,7 @@ export const mockActivities: Activity[] = [
   {
     id: "4",
     fileId: "file-resume",
-    time: "11:08",
+    timestamp: "2025-02-14T11:08:00-05:00",
     type: "move",
     file: "Documents/",
     description: "Moved from Downloads",
@@ -36,7 +36,7 @@ export const mockActivities: Activity[] = [
   {
     id: "5",
     fileId: "file-project",
-    time: "1:08",
+    timestamp: "2025-02-14T13:08:00-05:00",
     type: "move",
     file: "Documents/",
     description: "Moved from Desktop",

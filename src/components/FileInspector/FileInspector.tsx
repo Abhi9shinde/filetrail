@@ -26,8 +26,9 @@ function FileInspector({ file, onClose }: FileInspectorProps) {
         </div>
 
         <button
+          type="button"
           onClick={onClose}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-white/[0.05] hover:text-zinc-300"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-white/[0.05] hover:text-zinc-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
           aria-label="Close file inspector"
         >
           <X size={15} strokeWidth={1.8} />

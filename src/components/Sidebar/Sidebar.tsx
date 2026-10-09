@@ -1,4 +1,11 @@
-function Sidebar() {
+import type { AppSection } from "../../types/navigation";
+
+type SidebarProps = {
+  activeSection: AppSection;
+  onNavigate: (section: AppSection) => void;
+};
+
+function Sidebar({ activeSection, onNavigate }: SidebarProps) {
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-white/[0.06] bg-[#0b0b0d] px-4 py-5 text-zinc-400">
       {/* Brand */}
@@ -20,9 +27,9 @@ function Sidebar() {
           </p>
 
           <nav className="space-y-0.5">
-            <NavItem active label="Home" icon="⌂" />
-            <NavItem label="Activity" icon="◷" />
-            <NavItem label="Search" icon="⌕" />
+            <NavItem active={activeSection === "Home"} label="Home" icon="⌂" onClick={() => onNavigate("Home")} />
+            <NavItem active={activeSection === "Activity"} label="Activity" icon="◷" onClick={() => onNavigate("Activity")} />
+            <NavItem active={activeSection === "Search"} label="Search" icon="⌕" onClick={() => onNavigate("Search")} />
           </nav>
         </div>
 
@@ -31,13 +38,13 @@ function Sidebar() {
             Library
           </p>
 
-          <NavItem label="Starred" icon="☆" />
+          <NavItem active={activeSection === "Starred"} label="Starred" icon="☆" onClick={() => onNavigate("Starred")} />
         </div>
       </div>
 
       {/* Bottom */}
       <div className="mt-auto">
-        <NavItem label="Settings" icon="⚙" />
+        <NavItem active={activeSection === "Settings"} label="Settings" icon="⚙" onClick={() => onNavigate("Settings")} />
       </div>
     </aside>
   );
@@ -47,14 +54,18 @@ type NavItemProps = {
   label: string;
   icon: string;
   active?: boolean;
+  onClick: () => void;
 };
 
-function NavItem({ label, icon, active = false }: NavItemProps) {
+function NavItem({ label, icon, active = false, onClick }: NavItemProps) {
   return (
     <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
       className={`
         flex w-full items-center gap-3 rounded-md px-3 py-2
-        text-sm transition-colors duration-150
+        text-left text-sm transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400
         ${
           active
             ? "bg-white/[0.06] text-zinc-100"

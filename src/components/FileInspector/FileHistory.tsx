@@ -7,9 +7,13 @@ type FileHistoryProps = {
 };
 
 function FileHistory({ activities }: FileHistoryProps) {
+  const newestFirst = [...activities].sort(
+    (a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp),
+  );
+
   return (
     <div>
-      {activities.map((activity) => (
+      {newestFirst.map((activity) => (
         <FileHistoryItem key={activity.id} activity={activity} />
       ))}
     </div>

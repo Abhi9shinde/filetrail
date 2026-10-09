@@ -2,6 +2,7 @@ import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 import type { Activity } from "../../types/activity";
+import { formatActivityTimestamp } from "../../utils/formatActivityTimestamp";
 
 type FileHistoryItemProps = {
   activity: Activity;
@@ -10,23 +11,25 @@ type FileHistoryItemProps = {
 function FileHistoryItem({ activity }: FileHistoryItemProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const canExpand = activity.type === "modify";
+  const canExpand = Boolean(activity.details);
 
   return (
     <div className="border-b border-white/[0.06] py-4">
       <button
         type="button"
         onClick={() => canExpand && setExpanded(!expanded)}
-        className={`flex w-full items-start gap-3 text-left ${
+        disabled={!canExpand}
+        aria-expanded={canExpand ? expanded : undefined}
+        className={`flex w-full items-start gap-3 text-left focus-visible:rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 ${
           canExpand ? "cursor-pointer" : "cursor-default"
         }`}
       >
-        <span className="w-24 shrink-0 pt-0.5 text-xs text-zinc-600">
-          {activity.time}
+        <span className="w-max min-w-24 shrink-0 whitespace-nowrap pt-0.5 text-xs text-zinc-600">
+          {formatActivityTimestamp(activity.timestamp)}
         </span>
 
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-zinc-300">
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-zinc-300">
             {activity.type === "modify"
               ? "Edited"
               : activity.type === "rename"
@@ -36,10 +39,10 @@ function FileHistoryItem({ activity }: FileHistoryItemProps) {
                   : activity.type === "download"
                     ? "Downloaded"
                     : "Deleted"}
-          </p>
+          </span>
 
-          <p className="mt-1 text-xs text-zinc-600">{activity.description}</p>
-        </div>
+          <span className="mt-1 block text-xs text-zinc-600">{activity.description}</span>
+        </span>
 
         {canExpand && (
           <ChevronRight
@@ -51,11 +54,9 @@ function FileHistoryItem({ activity }: FileHistoryItemProps) {
         )}
       </button>
 
-      {expanded && (
+      {expanded && activity.details && (
         <div className="ml-27 mt-3 border-l border-white/[0.06] pl-3">
-          <p className="text-xs leading-5 text-zinc-600">
-            37 file changes were detected during this edit session.
-          </p>
+          <p className="text-xs leading-5 text-zinc-600">{activity.details}</p>
         </div>
       )}
     </div>
