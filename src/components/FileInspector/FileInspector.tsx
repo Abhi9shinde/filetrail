@@ -1,5 +1,7 @@
 import { X } from "lucide-react";
 import type { FileRecord } from "../../types/file";
+import { mockActivities } from "../../data/mockActivities";
+import FileHistory from "./FileHistory";
 
 type FileInspectorProps = {
   file: FileRecord;
@@ -7,6 +9,9 @@ type FileInspectorProps = {
 };
 
 function FileInspector({ file, onClose }: FileInspectorProps) {
+  const fileActivities = mockActivities.filter(
+    (activity) => activity.fileId === file.id,
+  );
   return (
     <aside className="flex h-full w-[380px] shrink-0 flex-col border-l border-white/[0.06] bg-[#0d0d0f]">
       <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
@@ -30,7 +35,13 @@ function FileInspector({ file, onClose }: FileInspectorProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-6">
-        <p className="text-xs text-zinc-600">File details will appear here.</p>
+        <div>
+          <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.18em] text-zinc-600">
+            History
+          </p>
+
+          <FileHistory activities={fileActivities} />
+        </div>
       </div>
     </aside>
   );
