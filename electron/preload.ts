@@ -1,24 +1,17 @@
-import { ipcRenderer, contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from "electron";
+import type { FileTrailPersistenceApi, PersistenceResult } from "../src/types/persistence";
+import { persistenceChannels } from "./database/channels";
 
-// --------- Expose some API to the Renderer process ---------
-contextBridge.exposeInMainWorld('ipcRenderer', {
-  on(...args: Parameters<typeof ipcRenderer.on>) {
-    const [channel, listener] = args
-    return ipcRenderer.on(channel, (event, ...args) => listener(event, ...args))
-  },
-  off(...args: Parameters<typeof ipcRenderer.off>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.off(channel, ...omit)
-  },
-  send(...args: Parameters<typeof ipcRenderer.send>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.send(channel, ...omit)
-  },
-  invoke(...args: Parameters<typeof ipcRenderer.invoke>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.invoke(channel, ...omit)
-  },
+function invoke<T>(channel: string, ...args: unknown[]): Promise<PersistenceResult<T>> {
+  return ipcRenderer.invoke(channel, ...args) as Promise<PersistenceResult<T>>;
+}
 
-  // You can expose other APTs you need here.
-  // ...
-})
+const persistenceApi: FileTrailPersistenceApi = {
+  initialize: () => invoke(persistenceChannels.initialize),
+  listRecentEvents: (limit) => invoke(persistenceChannels.listRecentEvents, limit),
+  getFileHistory: (fileId) => invoke(persistenceChannels.getFileHistory, fileId),
+  upsertFile: (file) => invoke(persistenceChannels.upsertFile, file),
+  recordEvent: (event) => invoke(persistenceChannels.recordEvent, event),
+};
+
+contextBridge.exposeInMainWorld("fileTrailPersistence", persistenceApi);

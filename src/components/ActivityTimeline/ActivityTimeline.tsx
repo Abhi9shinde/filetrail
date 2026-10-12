@@ -30,7 +30,7 @@ type ActivityTimelineProps = {
   onViewAll?: () => void;
 };
 
-const searchStopWords = new Set(["file", "files", "from", "recently"]);
+const searchStopWords = new Set(["file", "files", "from"]);
 const eventSearchTerms: Record<ActivityType, string[]> = {
   download: ["download", "downloaded"],
   modify: ["modify", "modified", "edit", "edited"],
@@ -38,6 +38,47 @@ const eventSearchTerms: Record<ActivityType, string[]> = {
   move: ["move", "moved"],
   delete: ["delete", "deleted"],
 };
+
+function getSearchIntent(query: string): { type: ActivityType | null; text: string } {
+  const intent = query.match(/\brecently\s+(renamed|modified)\b/i);
+  if (!intent) return { type: null, text: query };
+
+  const type: ActivityType = intent[1].toLowerCase() === "renamed" ? "rename" : "modify";
+  return { type, text: query.replace(intent[0], " ").trim() };
+}
+
+function previousFilename(activity: Activity): string | null {
+  if (activity.type !== "rename") return null;
+  return activity.description.match(/\brenamed from\s+(.+)$/i)?.[1]?.trim() ?? null;
+}
+
+function getFilenameCandidates(activity: Activity, currentName?: string): string[] {
+  const activityFilename = /[\\/]\s*$/.test(activity.file)
+    ? undefined
+    : activity.file.split(/[\\/]/).filter(Boolean).at(-1);
+  return [activityFilename, currentName, previousFilename(activity)]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => value.toLowerCase());
+}
+
+function getRelevanceRank(
+  query: string,
+  terms: string[],
+  filenames: string[],
+  paths: string[],
+  descriptions: string[],
+): number {
+  if (!query) return 0;
+
+  if (filenames.some((filename) => filename === query)) return 0;
+  if (filenames.some((filename) => filename.startsWith(query))) return 1;
+  if (filenames.some((filename) => filename.includes(query) || terms.some((term) => filename.includes(term)))) return 2;
+
+  const matchesTerms = (values: string[]) => terms.every((term) => values.some((value) => value.includes(term)));
+  if (paths.some((path) => path.includes(query)) || matchesTerms(paths)) return 3;
+  if (descriptions.some((description) => description.includes(query)) || matchesTerms(descriptions)) return 4;
+  return 5;
+}
 
 function ActivityTimeline({
   query,
@@ -48,41 +89,47 @@ function ActivityTimeline({
   onClear,
   onViewAll,
 }: ActivityTimelineProps) {
-  const queryTerms = query
+  const { type: intentType, text: searchText } = getSearchIntent(query.trim());
+  const normalizedQuery = searchText.toLowerCase().trim();
+  const queryTerms = normalizedQuery
     .trim()
     .toLowerCase()
     .split(/\s+/)
     .filter((term) => term && !searchStopWords.has(term));
 
   const filteredActivities = mockActivities
-    .filter((activity) => {
+    .map((activity) => {
       const file = mockFiles.find((record) => record.id === activity.fileId);
       const fileExtension = file?.extension.toLowerCase() ?? "";
-
-      if (activityType !== "all" && activity.type !== activityType) {
-        return false;
-      }
-
-      if (extension !== "all" && fileExtension !== extension.toLowerCase()) {
-        return false;
-      }
-
-      const searchableText = [
-        activity.file,
+      const filenames = getFilenameCandidates(activity, file?.name);
+      const paths = [activity.file, file?.path].filter(Boolean).map((value) => value!.toLowerCase());
+      const descriptions = [
         activity.description,
         activity.type,
         ...eventSearchTerms[activity.type],
-        file?.name,
-        file?.path,
-        fileExtension,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+      ].map((value) => value.toLowerCase());
 
-      return queryTerms.every((term) => searchableText.includes(term));
+      if (activityType !== "all" && activity.type !== activityType) {
+        return null;
+      }
+
+      if (intentType && activity.type !== intentType) return null;
+      if (extension !== "all" && fileExtension !== extension.toLowerCase()) {
+        return null;
+      }
+
+      const searchableText = [...filenames, ...paths, ...descriptions, fileExtension];
+      const matchesQuery = queryTerms.every((term) => searchableText.some((value) => value.includes(term)));
+      if (!matchesQuery) return null;
+
+      return {
+        activity,
+        rank: getRelevanceRank(normalizedQuery, queryTerms, filenames, paths, descriptions),
+      };
     })
-    .sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+    .filter((result): result is { activity: Activity; rank: number } => result !== null)
+    .sort((a, b) => a.rank - b.rank || Date.parse(b.activity.timestamp) - Date.parse(a.activity.timestamp))
+    .map(({ activity }) => activity);
 
   const hasActiveFilters = Boolean(query.trim()) || activityType !== "all" || extension !== "all";
   const heading = query.trim() ? `Recent Activities for ${query.trim()}` : title;

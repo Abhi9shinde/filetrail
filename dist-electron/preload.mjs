@@ -1,22 +1,20 @@
 "use strict";
 const electron = require("electron");
-electron.contextBridge.exposeInMainWorld("ipcRenderer", {
-  on(...args) {
-    const [channel, listener] = args;
-    return electron.ipcRenderer.on(channel, (event, ...args2) => listener(event, ...args2));
-  },
-  off(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.off(channel, ...omit);
-  },
-  send(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.send(channel, ...omit);
-  },
-  invoke(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.invoke(channel, ...omit);
-  }
-  // You can expose other APTs you need here.
-  // ...
-});
+const persistenceChannels = {
+  initialize: "filetrail:persistence:initialize",
+  listRecentEvents: "filetrail:persistence:list-recent-events",
+  getFileHistory: "filetrail:persistence:get-file-history",
+  upsertFile: "filetrail:persistence:upsert-file",
+  recordEvent: "filetrail:persistence:record-event"
+};
+function invoke(channel, ...args) {
+  return electron.ipcRenderer.invoke(channel, ...args);
+}
+const persistenceApi = {
+  initialize: () => invoke(persistenceChannels.initialize),
+  listRecentEvents: (limit) => invoke(persistenceChannels.listRecentEvents, limit),
+  getFileHistory: (fileId) => invoke(persistenceChannels.getFileHistory, fileId),
+  upsertFile: (file) => invoke(persistenceChannels.upsertFile, file),
+  recordEvent: (event) => invoke(persistenceChannels.recordEvent, event)
+};
+electron.contextBridge.exposeInMainWorld("fileTrailPersistence", persistenceApi);
